@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import Trip, Route, Vehicle, PaymentDetails, ContactDetails
+from .models import Trip, Route, Vehicle, PaymentDetails, ContactDetails, TripSeats  # Add TripSeats here
 
 # --- USER SERIALIZERS ---
 class UserSignupSerializer(serializers.ModelSerializer):
@@ -39,7 +39,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
-        fields = ['id', 'destination', 'start_date', 'end_date', 'vehicle', 'passengers']
+        fields = ['id', 'destination', 'start_date', 'end_date', 'vehicle', 'total_seats', 'seats_remaining']
 
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -60,7 +60,30 @@ class PaymentDetailsSerializer(serializers.ModelSerializer):
             'payment_method', 'upi_id', 'account_no', 'ifsc'
         ]
 
+class TripDetailSerializer(serializers.ModelSerializer):
+    # Include payment info here explicitly
+    payment_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Trip
+        fields = [
+            'id', 'destination', 'start_date', 'end_date',
+            'vehicle', 'total_seats', 'seats_remaining', 'payment_info'
+        ]
+
+    def get_payment_info(self, obj):
+        payment = PaymentDetails.objects.filter(trip=obj).first()
+        if payment:
+            return PaymentDetailsSerializer(payment).data
+        return None
+
 class ContactDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactDetails
         fields = ['trip', 'phone', 'email', 'is_phone_verified', 'is_email_verified']
+
+# --- NEW TRIP SEATS SERIALIZER ---
+class TripSeatsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TripSeats
+        fields = ['id', 'trip', 'max_capacity', 'people_already', 'people_needed']

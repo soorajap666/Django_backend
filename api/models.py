@@ -8,7 +8,8 @@ class Trip(models.Model):
     start_date = models.DateField() 
     end_date = models.DateField()   
     vehicle = models.CharField(max_length=50) 
-    passengers = models.IntegerField()
+    total_seats = models.IntegerField(default=1)
+    seats_remaining = models.IntegerField(default=1)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -74,3 +75,26 @@ class ContactDetails(models.Model):
 
     class Meta:
         db_table = 'contact_details'
+
+class TripJoin(models.Model):
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='joins')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('trip', 'user')
+
+class TripSeats(models.Model):
+    trip = models.OneToOneField(Trip, on_delete=models.CASCADE, related_name='seats_info')
+    max_capacity = models.IntegerField()  # Maximum capacity of vehicle
+    people_already = models.IntegerField(default=0)  # People already in the trip
+    people_needed = models.IntegerField()  # Calculated: max_capacity - people_already
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'trip_seats'
+
+    def __str__(self):
+        return f"Trip {self.trip.id}: {self.people_needed} people needed"
